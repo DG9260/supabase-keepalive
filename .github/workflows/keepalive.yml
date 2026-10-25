@@ -1,0 +1,26 @@
+name: Supabase Keep Alive
+
+on:
+  schedule:
+    # UTC 时间每天 00:30 运行一次（北京时间早上 8:30）
+    - cron: '30 0 * * *'
+  # 允许手动触发，方便随时测试
+  workflow_dispatch:
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        run: |
+          echo "开始向 Supabase 发送保活请求..."
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "apikey: ${{ secrets.SUPABASE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/results?select=id&limit=1")
+          echo "服务器返回状态码：$RESPONSE"
+          if [ "$RESPONSE" = "200" ]; then
+            echo "保活成功！数据库已产生活跃记录"
+          else
+            echo "警告：状态码不是 200，可能表名错误或项目已暂停"
+          fi
